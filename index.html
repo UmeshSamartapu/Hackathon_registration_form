@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Hackathon Registration</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background-color: #f0f0f0;
+    }
+
+    .container {
+      background-color: white;
+      padding: 25px;
+      border-radius: 10px;
+      width: 400px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #2c3e50;
+      margin-bottom: 25px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #27ae60;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #219a52;
+    }
+
+    .registrations-list {
+      margin-top: 20px;
+    }
+
+    .registration-item {
+      background-color: #f8f9fa;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      border-left: 4px solid #27ae60;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Hackathon Registration</h1>
+    
+    <div class="form-group">
+      <input type="text" id="name" placeholder="Full Name" required>
+    </div>
+    
+    <div class="form-group">
+      <input type="email" id="email" placeholder="Email" required>
+    </div>
+    
+    <div class="form-group">
+      <input type="tel" id="phone" placeholder="Phone Number" required>
+    </div>
+    
+    <div class="form-group">
+      <input type="text" id="team" placeholder="Team Name">
+    </div>
+    
+    <div class="form-group">
+      <input type="text" id="topic" placeholder="Project Topic">
+    </div>
+    
+    <button onclick="registerParticipant()">Register Now</button>
+
+    <div class="registrations-list">
+      <h3>Registered Participants:</h3>
+      <div id="registrations"></div>
+    </div>
+  </div>
+
+  <!-- Firebase Configuration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js";
+    import { getDatabase, ref, push, set, onValue } from "https://www.gstatic.com/firebasejs/9.6.10/firebase-database.js";
+
+    const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID
+};
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    window.registerParticipant = function() {
+      const name = document.getElementById('name').value.trim();
+      const email = document.getElementById('email').value.trim();
+      const phone = document.getElementById('phone').value.trim();
+      const team = document.getElementById('team').value.trim();
+      const topic = document.getElementById('topic').value.trim();
+
+      if (!name || !email || !phone) {
+        alert('Please fill in all required fields (Name, Email, Phone)');
+        return;
+      }
+
+      const registrationRef = push(ref(database, 'registrations'));
+      set(registrationRef, {
+        name: name,
+        email: email,
+        phone: phone,
+        team: team || 'Individual',
+        topic: topic || 'To be announced',
+        timestamp: new Date().toISOString()
+      });
+
+      // Clear form fields
+      document.getElementById('name').value = '';
+      document.getElementById('email').value = '';
+      document.getElementById('phone').value = '';
+      document.getElementById('team').value = '';
+      document.getElementById('topic').value = '';
+    };
+
+    // Display registrations
+    const registrationsDiv = document.getElementById('registrations');
+    const registrationsRef = ref(database, 'registrations');
+
+    onValue(registrationsRef, (snapshot) => {
+      registrationsDiv.innerHTML = '';
+      snapshot.forEach((childSnapshot) => {
+        const registration = childSnapshot.val();
+        const div = document.createElement('div');
+        div.className = 'registration-item';
+        div.innerHTML = `
+          <strong>${registration.name}</strong><br>
+          Email: ${registration.email}<br>
+          Phone: ${registration.phone}<br>
+          Team: ${registration.team}<br>
+          Topic: ${registration.topic}
+        `;
+        registrationsDiv.appendChild(div);
+      });
+    });
+  </script>
+</body>
+</html>
